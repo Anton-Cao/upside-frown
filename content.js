@@ -3,6 +3,11 @@ const API_KEY = 'AIzaSyDvyBWKAH2nmRGRemjhjvJwcuJJZphf_Ik';
 async function getFaceData(uri) {
     if (uri.includes('undefined')) return {};
 
+    const cachedRes = localStorage.getItem(uri);
+    if (cachedRes) {
+        return JSON.parse(cachedRes);
+    }
+
     const image = {
         'source': {
             'imageUri': uri
@@ -21,6 +26,8 @@ async function getFaceData(uri) {
         contentType: 'application/json',
         type: 'POST',
     });
+
+    localStorage.setItem(uri, JSON.stringify(res));
 
     return res;
 }
@@ -41,6 +48,11 @@ function absY(relY) {
     return relY + (window.pageYOffset || document.documentElement.scrollTop);
 }
 
+/**
+ * Given a length in terms of the original size of the image, scales it down to the display size
+ * @param {img element} image 
+ * @param {Number} length 
+ */
 function scale(image, length) {
     return length * image.width / image.naturalWidth;
 }
@@ -55,7 +67,7 @@ function addEye(imageObj, eyePosition, eyeWidth) {
 
     // draw eye
     const eyeX = imageLeft + scale(image, eyePosition['x']) - eyeWidth / 2;
-    const eyeY = imageTop + eyePosition['y'] * image.height / image.naturalHeight - eyeWidth / 2;
+    const eyeY = imageTop + scale(image, eyePosition['y']) - eyeWidth / 2;
     const eye = document.createElement('span');
     $(eye).css('position', 'absolute');
     $(eye).css('top', eyeY);
@@ -65,11 +77,13 @@ function addEye(imageObj, eyePosition, eyeWidth) {
     $(eye).css('background-color', 'white');
     $(eye).css('border-radius', '50%')
     $(eye).css('z-index', 99);
+    $(eye).addClass('upside-frown')
+    $(eye).addClass('eye');
     document.body.appendChild(eye);
 
     // draw pupil
-    const pupilX = imageLeft + eyePosition['x'] * image.width / image.naturalWidth - pupilWidth / 2;
-    const pupilY = imageTop + eyePosition['y'] * image.height / image.naturalHeight - pupilWidth / 2;
+    const pupilX = imageLeft + scale(image, eyePosition['x']) - pupilWidth / 2;
+    const pupilY = imageTop + scale(image, eyePosition['y'])  - pupilWidth / 2;
     const pupil = document.createElement('span');
     $(pupil).css('position', 'absolute');
     $(pupil).css('top', pupilY);
@@ -80,6 +94,7 @@ function addEye(imageObj, eyePosition, eyeWidth) {
     $(pupil).css('border-radius', '50%');
     $(pupil).css('z-index', 100);
     $(pupil).addClass('pupil');
+    $(pupil).addClass('upside-frown');
     $(pupil).attr('data-eye-width', eyeWidth);
     $(pupil).attr('data-eye-x', pupilX);
     $(pupil).attr('data-eye-y', pupilY);
@@ -154,18 +169,19 @@ async function processImage(imageObj) {
                 canvas.height = image.height;
                 canvas.style.zIndex = 98;
                 canvas.style.position = 'absolute';
-                canvas.style.top = imageTop;
-                canvas.style.left = imageLeft;
+                canvas.style.top = imageTop + 'px';
+                canvas.style.left = imageLeft + 'px';
+                canvas.style.pointerEvents = 'none';
+                canvas.className = 'upside-frown';
                 document.body.appendChild(canvas);
 
                 const ctx = canvas.getContext('2d');
-                const mouth = new Image();
-                mouth.src = image.src;
-                //ctx.rotate(Math.PI);
-                ctx.drawImage(mouth, scale(image, mouthLeft['x']), scale(image, upperLip['y']),
-                    scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y']),
-                    scale(image, mouthLeft['x']), scale(image, upperLip['y']),
-                    -scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
+
+                ctx.rotate(Math.PI);
+                ctx.drawImage(image, mouthLeft['x'], upperLip['y'],
+                    mouthRight['x'] - mouthLeft['x'], lowerLip['y'] - upperLip['y'],
+                    -scale(image, mouthRight['x']), -scale(image, lowerLip['y']),
+                    scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
                 
                 // draw tongue
                 const mouthWidth = scale(image, mouthRight['x'] - mouthLeft['x']);
@@ -221,5 +237,13 @@ $(window).on('load', function () {
             $(this).css('top', eyeY + dy / hypotenuse * shift);
             $(this).css('left', eyeX + dx / hypotenuse * shift); 
         });
+    });
+});
+
+$(window).resize(function() {
+    $('.upside-frown').remove(); // clear existing faces
+
+    $('img').each(async function () {
+        await processImage($(this));
     });
 });

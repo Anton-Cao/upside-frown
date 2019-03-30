@@ -11,5 +11,10 @@
       "js": ["jquery-3.3.1.min.js", "content.js"]
     }
   ],
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
   "manifest_version": 2
 }
