@@ -125,6 +125,34 @@ function addTongue(imageObj, position, height, width) {
     document.body.appendChild(tongue);
 }
 
+function addMustache(imageObj, mouth_center, upper_lip, width, height) {
+    const image = imageObj.get(0);
+    const rect = image.getBoundingClientRect();
+    
+    const imageLeft = absX(rect.left);
+    const imageTop = absY(rect.top);
+    const moustacheX = imageLeft + mouth_center['x'] * image.width / image.naturalWidth - width / 2;
+    const moustacheY = imageTop + upper_lip['y'] * image.height / image.naturalHeight - height / 2;
+    const moustache = document.createElement('span');
+
+    $(moustache).css('position', 'absolute');
+    $(moustache).css('background-image', 'url(http://www.pngmart.com/files/7/Fake-Moustache-PNG-Clipart.png)');
+    $(moustache).css('background-repeat', 'no-repeat');
+    $(moustache).css('background-position', 'center');
+    $(moustache).css('background-size', 'cover');
+    $(moustache).css('top', moustacheY);
+    $(moustache).css('left', moustacheX);
+    $(moustache).css('width', width);
+    $(moustache).css('height', height);
+    $(moustache).css('z-index', 100);
+    $(moustache).addClass('moustache');
+    $(moustache).attr('data-moustache-width', width);
+    $(moustache).attr('data-moustache-height', height);
+    $(moustache).attr('data-moustache-x', moustacheX);
+    $(moustache).attr('data-moustache-y', moustacheY);
+    document.body.appendChild(moustache);
+}
+
 async function processImage(imageObj) {
     const image = imageObj.get(0);
     imageObj.css('border', '2px solid red');
@@ -199,8 +227,16 @@ async function processImage(imageObj) {
 
             // play audio on click
             imageObj.click(function () {
+                console.log('scream');
                 $('#scream-audio')[0].play();
             });
+            //Mustache
+            if ('MOUTH_CENTER' in typeToPosition && 'MOUTH_RIGHT' in typeToPosition) {
+                let width = scale(image, mouthRight['x'] - mouthLeft['x']);
+                let height = width * .33;
+                addMustache(imageObj, typeToPosition['MOUTH_CENTER'], typeToPosition['UPPER_LIP'], width, height);
+            } 
+            
         }
     }
 }
