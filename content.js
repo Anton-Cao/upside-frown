@@ -3,6 +3,11 @@ const API_KEY = 'AIzaSyDvyBWKAH2nmRGRemjhjvJwcuJJZphf_Ik';
 async function getFaceData(uri) {
     if (uri.includes('undefined')) return {};
 
+    const cachedRes = localStorage.getItem(uri);
+    if (cachedRes) {
+        return JSON.parse(cachedRes);
+    }
+
     const image = {
         'source': {
             'imageUri': uri
@@ -21,6 +26,8 @@ async function getFaceData(uri) {
         contentType: 'application/json',
         type: 'POST',
     });
+
+    localStorage.setItem(uri, JSON.stringify(res));
 
     return res;
 }
