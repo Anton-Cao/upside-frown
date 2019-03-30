@@ -130,19 +130,19 @@ async function processImage(imageObj) {
                 canvas.height = image.height;
                 canvas.style.zIndex = 98;
                 canvas.style.position = 'absolute';
-                canvas.style.top = imageTop;
-                canvas.style.left = imageLeft;
+                canvas.style.top = imageTop + 'px';
+                canvas.style.left = imageLeft + 'px';
+                canvas.style.pointerEvents = 'none';
                 document.body.appendChild(canvas);
 
                 const ctx = canvas.getContext('2d');
-                const mouth = new Image();
-                mouth.src = image.src;
-                //ctx.rotate(Math.PI);
-                ctx.drawImage(mouth, scale(image, mouthLeft['x']), scale(image, upperLip['y']),
-                    scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y']),
-                    scale(image, mouthLeft['x']), scale(image, upperLip['y']),
-                    -scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
+                ctx.rotate(Math.PI);
+                ctx.drawImage(image, mouthLeft['x'], upperLip['y'],
+                    mouthRight['x'] - mouthLeft['x'], lowerLip['y'] - upperLip['y'],
+                    -scale(image, mouthRight['x']), -scale(image, lowerLip['y']),
+                    scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
             }
+
             // play audio on click
             imageObj.click(function () {
                 $('#scream-audio')[0].play();
