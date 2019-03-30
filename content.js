@@ -110,7 +110,13 @@ async function processImage(imageObj) {
 }
 
 $(window).on('load', function () {
+    let audioElement = document.createElement('audio');
+    audioElement.setAttribute('src', 'https://upload.wikimedia.org/wikipedia/commons/d/d9/Wilhelm_Scream.ogg');
+
     $('img').each(async function () {
+        $(this).click(function () {
+            audioElement.play();
+        });
         await processImage($(this));
     });
 
