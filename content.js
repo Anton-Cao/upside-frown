@@ -41,6 +41,10 @@ function absY(relY) {
     return relY + (window.pageYOffset || document.documentElement.scrollTop);
 }
 
+function scale(image, length) {
+    return length * image.width / image.naturalWidth;
+}
+
 function addEye(imageObj, eyePosition, eyeWidth) {
     const pupilWidth = Math.ceil(eyeWidth / 3);
     const image = imageObj.get(0);
@@ -50,7 +54,7 @@ function addEye(imageObj, eyePosition, eyeWidth) {
     const imageTop = absY(rect.top);
 
     // draw eye
-    const eyeX = imageLeft + eyePosition['x'] * image.width / image.naturalWidth - eyeWidth / 2;
+    const eyeX = imageLeft + scale(image, eyePosition['x']) - eyeWidth / 2;
     const eyeY = imageTop + eyePosition['y'] * image.height / image.naturalHeight - eyeWidth / 2;
     const eye = document.createElement('span');
     $(eye).css('position', 'absolute');
@@ -83,6 +87,7 @@ function addEye(imageObj, eyePosition, eyeWidth) {
 }
 
 async function processImage(imageObj) {
+    const image = imageObj.get(0);
     imageObj.css('border', '2px solid red');
     const uri = absolutePath(imageObj.attr('src'));
     const res = await getFaceData(uri); if (!('responses' in res)) return;
@@ -90,20 +95,53 @@ async function processImage(imageObj) {
         if (!('faceAnnotations' in face)) continue;
         for (const annotation of face['faceAnnotations']) {
             if (annotation['detectionConfidence'] < 0.8) continue;
-            const typeToPosition = {};
+            const typeToPosition = {}; // dictionary that maps facial feature to position
             for (const landmark of annotation['landmarks']) {
                 typeToPosition[landmark['type']] = landmark['position'];
             }
+            // draw eyes
             for (const side of ['LEFT', 'RIGHT']) {
                 if ((side + '_EYE') in typeToPosition) {
                     let width = 12; // default value
                     if ((side + '_EYE_RIGHT_CORNER') in typeToPosition && (side + '_EYE_LEFT_CORNER') in typeToPosition) {
                         width = typeToPosition[side + '_EYE_RIGHT_CORNER']['x'] - typeToPosition[side + '_EYE_LEFT_CORNER']['x'];
-                        width *= imageObj.get(0).width / imageObj.get(0).naturalWidth;
+                        width *= image.width / image.naturalWidth;
                         width *= 1.25;
                     }
                     addEye(imageObj, typeToPosition[side + '_EYE'], width);
                 }
+            }
+            // flip mouth
+            const lowerLip = typeToPosition['LOWER_LIP'];
+            const upperLip = typeToPosition['UPPER_LIP'];
+            const mouthCenter = typeToPosition['MOUTH_CENTER'];
+            const mouthLeft = typeToPosition['MOUTH_LEFT'];
+            const mouthRight = typeToPosition['MOUTH_RIGHT'];
+
+            console.log(typeToPosition);
+
+            if (lowerLip && upperLip && mouthCenter && mouthLeft && mouthRight) {
+                const canvas = document.createElement('canvas');
+                const rect = image.getBoundingClientRect();
+                const imageLeft = absX(rect.left);
+                const imageTop = absY(rect.top);
+
+                canvas.width = image.width;
+                canvas.height = image.height;
+                canvas.style.zIndex = 98;
+                canvas.style.position = 'absolute';
+                canvas.style.top = imageTop;
+                canvas.style.left = imageLeft;
+                document.body.appendChild(canvas);
+
+                const ctx = canvas.getContext('2d');
+                const mouth = new Image();
+                mouth.src = image.src;
+                //ctx.rotate(Math.PI);
+                ctx.drawImage(mouth, scale(image, mouthLeft['x']), scale(image, upperLip['y']),
+                    scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y']),
+                    scale(image, mouthLeft['x']), scale(image, upperLip['y']),
+                    -scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
             }
         }
     }
