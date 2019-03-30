@@ -143,11 +143,20 @@ async function processImage(imageObj) {
                     scale(image, mouthLeft['x']), scale(image, upperLip['y']),
                     -scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
             }
+            // play audio on click
+            imageObj.click(function () {
+                $('#scream-audio')[0].play();
+            });
         }
     }
 }
 
 $(window).on('load', function () {
+    let audioElement = document.createElement('audio');
+    audioElement.setAttribute('src', 'https://upload.wikimedia.org/wikipedia/commons/d/d9/Wilhelm_Scream.ogg');
+    audioElement.setAttribute('id', 'scream-audio');
+    document.body.appendChild(audioElement);
+
     $('img').each(async function () {
         await processImage($(this));
     });
