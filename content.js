@@ -86,6 +86,30 @@ function addEye(imageObj, eyePosition, eyeWidth) {
     document.body.appendChild(pupil);
 }
 
+function addTongue(imageObj, position, height, width) {
+    const image = imageObj.get(0);
+    const rect = image.getBoundingClientRect();
+
+    const imageLeft = absX(rect.left);
+    const imageTop = absY(rect.top);
+
+    const x = imageLeft + scale(image, position['x']) - width / 2;
+    const y = imageTop + position['y'] * image.height / image.naturalHeight;
+    const tongue = document.createElement('span');
+    $(tongue).css('position', 'absolute');
+    $(tongue).css('top', y);
+    $(tongue).css('left', x);
+    $(tongue).css('height', height);
+    $(tongue).css('width', width);
+    $(tongue).css('background-color', '#ff5177');
+    $(tongue).css('border-radius', '0% 0% 50% 50%');
+    $(tongue).css('border', '1px solid #f72a56');
+    $(tongue).css('z-index', 99);
+    $(tongue).css('display', 'none');
+    $(tongue).addClass('tongue');
+    document.body.appendChild(tongue);
+}
+
 async function processImage(imageObj) {
     const image = imageObj.get(0);
     imageObj.css('border', '2px solid red');
@@ -142,7 +166,21 @@ async function processImage(imageObj) {
                     scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y']),
                     scale(image, mouthLeft['x']), scale(image, upperLip['y']),
                     -scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
+                
+                // draw tongue
+                const mouthWidth = scale(image, mouthRight['x'] - mouthLeft['x']);
+                addTongue(imageObj, lowerLip, mouthWidth, mouthWidth / 2);
             }
+
+            // stick out tongue on hover
+            imageObj.hover(function() {
+                if ( $( ".tongue:first" ).is( ":hidden" ) ) {
+                    $( ".tongue" ).slideDown();
+                }
+            }, function() {
+                $('.tongue').slideUp();
+            });
+
             // play audio on click
             imageObj.click(function () {
                 $('#scream-audio')[0].play();
