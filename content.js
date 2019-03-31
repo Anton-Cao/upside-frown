@@ -122,6 +122,7 @@ function addTongue(imageObj, position, height, width) {
     $(tongue).css('z-index', 99);
     $(tongue).css('display', 'none');
     $(tongue).addClass('tongue');
+    $(tongue).addClass('upside-frown');
     document.body.appendChild(tongue);
 }
 
@@ -146,6 +147,7 @@ function addMustache(imageObj, mouth_center, upper_lip, width, height) {
     $(moustache).css('height', height);
     $(moustache).css('z-index', 100);
     $(moustache).addClass('moustache');
+    $(moustache).addClass('upside-frown');
     $(moustache).attr('data-moustache-width', width);
     $(moustache).attr('data-moustache-height', height);
     $(moustache).attr('data-moustache-x', moustacheX);
