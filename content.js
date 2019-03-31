@@ -83,7 +83,7 @@ function addEye(imageObj, eyePosition, eyeWidth) {
 
     // draw pupil
     const pupilX = imageLeft + scale(image, eyePosition['x']) - pupilWidth / 2;
-    const pupilY = imageTop + scale(image, eyePosition['y'])  - pupilWidth / 2;
+    const pupilY = imageTop + scale(image, eyePosition['y']) - pupilWidth / 2;
     const pupil = document.createElement('span');
     $(pupil).css('position', 'absolute');
     $(pupil).css('top', pupilY);
@@ -101,6 +101,31 @@ function addEye(imageObj, eyePosition, eyeWidth) {
     document.body.appendChild(pupil);
 }
 
+function addFlippedMouth(imageObj, lowerLip, upperLip, mouthCenter, mouthLeft, mouthRight) {
+    const image = imageObj.get(0);
+    const rect = image.getBoundingClientRect();
+    const imageLeft = absX(rect.left);
+    const imageTop = absY(rect.top);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    canvas.style.zIndex = 98;
+    canvas.style.position = 'absolute';
+    canvas.style.top = imageTop + 'px';
+    canvas.style.left = imageLeft + 'px';
+    canvas.style.pointerEvents = 'none';
+    canvas.className = 'upside-frown';
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    ctx.rotate(Math.PI);
+    ctx.drawImage(image, mouthLeft['x'], upperLip['y'],
+        mouthRight['x'] - mouthLeft['x'], lowerLip['y'] - upperLip['y'],
+        -scale(image, mouthRight['x']), -scale(image, lowerLip['y']),
+        scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y']));
+}
+
 function addTongue(imageObj, position, height, width) {
     const image = imageObj.get(0);
     const rect = image.getBoundingClientRect();
@@ -109,7 +134,7 @@ function addTongue(imageObj, position, height, width) {
     const imageTop = absY(rect.top);
 
     const x = imageLeft + scale(image, position['x']) - width / 2;
-    const y = imageTop + position['y'] * image.height / image.naturalHeight;
+    const y = imageTop + scale(image, position['y']);
     const tongue = document.createElement('span');
     $(tongue).css('position', 'absolute');
     $(tongue).css('top', y);
@@ -129,11 +154,11 @@ function addTongue(imageObj, position, height, width) {
 function addMustache(imageObj, mouth_center, upper_lip, width, height) {
     const image = imageObj.get(0);
     const rect = image.getBoundingClientRect();
-    
+
     const imageLeft = absX(rect.left);
     const imageTop = absY(rect.top);
-    const moustacheX = imageLeft + mouth_center['x'] * image.width / image.naturalWidth - width / 2;
-    const moustacheY = imageTop + upper_lip['y'] * image.height / image.naturalHeight - height / 2;
+    const moustacheX = imageLeft + scale(image, mouth_center['x']) - width / 2;
+    const moustacheY = imageTop + scale(image, upper_lip['y']) - height / 2;
     const moustache = document.createElement('span');
 
     $(moustache).css('position', 'absolute');
@@ -157,13 +182,18 @@ function addMustache(imageObj, mouth_center, upper_lip, width, height) {
 
 async function processImage(imageObj) {
     const image = imageObj.get(0);
-    imageObj.css('border', '2px solid red');
+    imageObj.css('border', '2px solid orange');
     const uri = absolutePath(imageObj.attr('src'));
-    const res = await getFaceData(uri); if (!('responses' in res)) return;
+    const res = await getFaceData(uri); 
+    if (!('responses' in res)) {
+        imageObj.css('border-color', 'red');
+        return;
+    }
     for (const face of res['responses']) {
+        imageObj.css('border-color', 'green');
         if (!('faceAnnotations' in face)) continue;
         for (const annotation of face['faceAnnotations']) {
-            if (annotation['detectionConfidence'] < 0.8) continue;
+            if (annotation['detectionConfidence'] < 0.5) continue;
             const typeToPosition = {}; // dictionary that maps facial feature to position
             for (const landmark of annotation['landmarks']) {
                 typeToPosition[landmark['type']] = landmark['position'];
@@ -177,70 +207,71 @@ async function processImage(imageObj) {
                         width *= image.width / image.naturalWidth;
                         width *= 1.25;
                     }
-                    addEye(imageObj, typeToPosition[side + '_EYE'], width);
+                    chrome.storage.local.get(['eye'], function (result) {
+                        if (result.eye) {
+                            addEye(imageObj, typeToPosition[side + '_EYE'], width);
+                        }
+                    });
                 }
             }
-            // flip mouth
+
             const lowerLip = typeToPosition['LOWER_LIP'];
             const upperLip = typeToPosition['UPPER_LIP'];
             const mouthCenter = typeToPosition['MOUTH_CENTER'];
             const mouthLeft = typeToPosition['MOUTH_LEFT'];
             const mouthRight = typeToPosition['MOUTH_RIGHT'];
-
-            console.log(typeToPosition);
-
             if (lowerLip && upperLip && mouthCenter && mouthLeft && mouthRight) {
-                const canvas = document.createElement('canvas');
-                const rect = image.getBoundingClientRect();
-                const imageLeft = absX(rect.left);
-                const imageTop = absY(rect.top);
-
-                canvas.width = image.width;
-                canvas.height = image.height;
-                canvas.style.zIndex = 98;
-                canvas.style.position = 'absolute';
-                canvas.style.top = imageTop + 'px';
-                canvas.style.left = imageLeft + 'px';
-                canvas.style.pointerEvents = 'none';
-                canvas.className = 'upside-frown';
-                document.body.appendChild(canvas);
-
-                const ctx = canvas.getContext('2d');
-
-                ctx.rotate(Math.PI);
-                ctx.drawImage(image, mouthLeft['x'], upperLip['y'],
-                    mouthRight['x'] - mouthLeft['x'], lowerLip['y'] - upperLip['y'],
-                    -scale(image, mouthRight['x']), -scale(image, lowerLip['y']),
-                    scale(image, mouthRight['x'] - mouthLeft['x']), scale(image, lowerLip['y'] - upperLip['y'])); 
-                
-                // draw tongue
-                const mouthWidth = scale(image, mouthRight['x'] - mouthLeft['x']);
-                addTongue(imageObj, lowerLip, mouthWidth, mouthWidth / 2);
+                chrome.storage.local.get(['mouth', 'tongue'], function(result) {
+                    if (result.mouth) {
+                        // draw flipped mouth
+                        addFlippedMouth(imageObj, lowerLip, upperLip, mouthCenter, mouthLeft, mouthRight);
+                    }
+                    if (result.tongue) {
+                        // draw tongue
+                        const mouthWidth = scale(image, mouthRight['x'] - mouthLeft['x']);
+                        addTongue(imageObj, lowerLip, mouthWidth, mouthWidth / 2);
+                    }
+                });
             }
 
             // stick out tongue on hover
-            imageObj.hover(function() {
-                if ( $( ".tongue:first" ).is( ":hidden" ) ) {
-                    $( ".tongue" ).slideDown();
+            imageObj.hover(function () {
+                if ($(".tongue:first").is(":hidden")) {
+                    $(".tongue").slideDown();
                 }
-            }, function() {
+            }, function () {
                 $('.tongue').slideUp();
             });
 
             // play audio on click
             imageObj.click(function () {
-                console.log('scream');
-                $('#scream-audio')[0].play();
+                chrome.storage.local.get(['scream'], function (result) {
+                    if (result.scream) {
+                        $('#scream-audio')[0].play();
+                    }
+                });
             });
-            //Mustache
+
+            // mustache
             if ('MOUTH_CENTER' in typeToPosition && 'MOUTH_RIGHT' in typeToPosition) {
                 let width = scale(image, mouthRight['x'] - mouthLeft['x']);
                 let height = width * .33;
-                addMustache(imageObj, typeToPosition['MOUTH_CENTER'], typeToPosition['UPPER_LIP'], width, height);
-            } 
-            
+                chrome.storage.local.get(['stache'], function (result) {
+                    if (result.stache) {
+                        addMustache(imageObj, typeToPosition['MOUTH_CENTER'], typeToPosition['UPPER_LIP'], width, height);
+                    }
+                });
+            }
         }
     }
+}
+
+function drawFaces() {
+    $('.upside-frown').remove(); // clear existing faces
+
+    $('img').each(async function () {
+        await processImage($(this));
+    });
 }
 
 $(window).on('load', function () {
@@ -249,10 +280,9 @@ $(window).on('load', function () {
     audioElement.setAttribute('id', 'scream-audio');
     document.body.appendChild(audioElement);
 
-    $('img').each(async function () {
-        await processImage($(this));
-    });
+    drawFaces();
 
+    /*
     $('a').each(function () {
         const image = $(this).css('background-image');
         if (image != 'none') {
@@ -260,28 +290,34 @@ $(window).on('load', function () {
             $(this).css('border', '2px solid red');
         }
     });
+    */
 
-    $(document).mousemove(function(event) {
-        $('.pupil').each(function() {
+    $(document).mousemove(function (event) {
+        $('.pupil').each(function () {
             const eyeWidth = $(this).attr('data-eye-width');
             const eyeX = Number($(this).attr('data-eye-x'));
             const eyeY = Number($(this).attr('data-eye-y'));
             const mouseX = absX(event.pageX);
-            const mouseY = absY(event.pageY); 
+            const mouseY = absY(event.pageY);
             const dx = mouseX - eyeX;
             const dy = mouseY - eyeY;
             const hypotenuse = Math.pow(Math.pow(dx, 2) + Math.pow(dy, 2), 0.5);
             const shift = Math.min(eyeWidth / 4, hypotenuse);
             $(this).css('top', eyeY + dy / hypotenuse * shift);
-            $(this).css('left', eyeX + dx / hypotenuse * shift); 
+            $(this).css('left', eyeX + dx / hypotenuse * shift);
         });
     });
 });
 
-$(window).resize(function() {
-    $('.upside-frown').remove(); // clear existing faces
-
-    $('img').each(async function () {
-        await processImage($(this));
-    });
+$(window).resize(function () {
+    drawFaces();
 });
+
+chrome.runtime.onMessage.addListener(
+    function(message, sender, sendReponse) {
+        if (message.type === 'redraw') {
+            drawFaces();
+        }
+        sendResponse('received');
+    }
+)

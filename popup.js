@@ -1,4 +1,4 @@
-const features = ['mouth', 'tongue', 'stache', 'scream'];
+const features = ['eye', 'mouth', 'tongue', 'stache', 'scream'];
 
 $(document).ready(function() {
     chrome.storage.local.get(features, function(result) {
@@ -14,6 +14,12 @@ $(document).ready(function() {
         for (const feature of features) {
             featureSelection[feature] = $(`#${feature}`).is(':checked');
         }
-        chrome.storage.local.set(featureSelection);
+        chrome.storage.local.set(featureSelection, function() {
+            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, {type: 'redraw'}, function(res) {
+                    window.close();
+                });
+            });
+        });
     });
 });

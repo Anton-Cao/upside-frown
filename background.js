@@ -1,4 +1,4 @@
-const features = ['mouth', 'tongue', 'stache', 'scream'];
+const features = ['eye', 'mouth', 'tongue', 'stache', 'scream'];
 
 chrome.runtime.onInstalled.addListener(function() {
     const featureSelection = {};
