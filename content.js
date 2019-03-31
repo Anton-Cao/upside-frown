@@ -297,8 +297,8 @@ $(window).on('load', function () {
             const eyeWidth = $(this).attr('data-eye-width');
             const eyeX = Number($(this).attr('data-eye-x'));
             const eyeY = Number($(this).attr('data-eye-y'));
-            const mouseX = absX(event.pageX);
-            const mouseY = absY(event.pageY);
+            const mouseX = event.pageX;
+            const mouseY = event.pageY;
             const dx = mouseX - eyeX;
             const dy = mouseY - eyeY;
             const hypotenuse = Math.pow(Math.pow(dx, 2) + Math.pow(dy, 2), 0.5);
