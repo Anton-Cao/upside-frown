@@ -189,11 +189,12 @@ async function processImage(imageObj) {
         imageObj.css('border-color', 'red');
         return;
     }
+    let faceFound = false;
     for (const face of res['responses']) {
-        imageObj.css('border-color', 'green');
         if (!('faceAnnotations' in face)) continue;
         for (const annotation of face['faceAnnotations']) {
             if (annotation['detectionConfidence'] < 0.5) continue;
+            faceFound = true;
             const typeToPosition = {}; // dictionary that maps facial feature to position
             for (const landmark of annotation['landmarks']) {
                 typeToPosition[landmark['type']] = landmark['position'];
@@ -264,6 +265,7 @@ async function processImage(imageObj) {
             }
         }
     }
+    imageObj.css('border-color', faceFound ? 'green' : 'red');
 }
 
 function drawFaces() {
