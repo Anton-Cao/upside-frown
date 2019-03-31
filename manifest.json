@@ -4,7 +4,6 @@
   "description": "Turn frowns upside down",
   "permissions": [
     "activeTab",
-    "tabs",
     "storage"
   ],
   "content_scripts": [
