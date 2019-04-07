@@ -1,7 +1,7 @@
 {
   "name": "Upside Frown",
-  "version": "0.0.1",
-  "description": "Turn frowns upside down",
+  "version": "1.0",
+  "description": "Turn those frowns upside down!",
   "permissions": [
     "activeTab",
     "storage"
@@ -25,12 +25,14 @@
     "default_popup": "popup.html",
     "icons": {
       "16": "logo.png",
+      "32": "logo.png",
       "48": "logo.png",
       "128": "logo.png"
     }
   },
   "icons": {
     "16": "logo.png",
+    "32": "logo.png",
     "48": "logo.png",
     "128": "logo.png"
   },
